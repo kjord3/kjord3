@@ -1,0 +1,461 @@
+---
+title: "A Keynesian Approach to U.S. GDP Growth Using Key Determinants"
+author: "Kaleb Jordan"
+date: "2025-01-10"
+output:
+  html_document: default
+  pdf_document: default
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Necessary libraries
+library(tidyverse)
+library(tseries)
+library(forecast)
+library(glmnet)
+library(lmtest)
+library(corrplot)
+
+# Read GDP csv file
+gdp = read_csv("C:/Users/kaleb/Downloads/projs/URES (GDP Growth)/GDP.csv") %>%
+  rename(`GDP (In Billions)` = GDP)
+gdp = gdp %>%
+  filter(observation_date <= "2023-01-01")
+
+# Filtering quarterly data for other indicators as a function
+quarterly_filter = function(df) {
+  df %>%
+    filter((month(observation_date) == 1 & day(observation_date) == 1) |
+             (month(observation_date) == 4 & day(observation_date) == 1) |
+             (month(observation_date) == 7 & day(observation_date) == 1) |
+             (month(observation_date) == 10 & day(observation_date) == 1))
+}
+
+# Load other csv files using the quarterly_filter function
+# Consumption (C)
+con_sent = quarterly_filter(read_csv("C:/Users/kaleb/Downloads/projs/URES (GDP Growth)/con_sent.csv"))
+ffer = quarterly_filter(read_csv("C:/Users/kaleb/Downloads/projs/URES (GDP Growth)/ffer.csv"))
+med_income = quarterly_filter(read_csv("C:/Users/kaleb/Downloads/projs/URES (GDP Growth)/med_income.csv"))
+# Investment (I)
+bus_sent = quarterly_filter(read_csv("C:/Users/kaleb/Downloads/projs/URES (GDP Growth)/bus_sent.csv"))
+tot_credit = quarterly_filter(read_csv("C:/Users/kaleb/Downloads/projs/URES (GDP Growth)/tot_credit.csv"))
+cap_util = quarterly_filter(read_csv("C:/Users/kaleb/Downloads/projs/URES (GDP Growth)/cap_util.csv"))
+# Govenment Spending
+fg_exp = quarterly_filter(read_csv("C:/Users/kaleb/Downloads/projs/URES (GDP Growth)/fg_exp.csv"))
+gov_bal = quarterly_filter(read_csv("C:/Users/kaleb/Downloads/projs/URES (GDP Growth)/gov_bal.csv"))
+# Net Exports (X - M)
+net_exp = quarterly_filter(read_csv("C:/Users/kaleb/Downloads/projs/URES (GDP Growth)/net_exp.csv"))
+
+# Combine all variables into one data frame
+df = cbind(gdp, con_sent$UMCSENT, ffer$FEDFUNDS, bus_sent$EMVMACROBUS,
+           tot_credit$QUSPAM770A, cap_util$TCU, fg_exp$FGEXPND, gov_bal$M318501Q027NBEA, 
+           net_exp$NETEXP, med_income$LES1252881600Q)
+
+# Rename columns
+df = df %>%
+  rename(Date = observation_date,
+         `Consumer Sentiment` = `con_sent$UMCSENT`,
+         `Federal Funds Effective Rate` = `ffer$FEDFUNDS`,
+         `Business Sentiment` = `bus_sent$EMVMACROBUS`,
+         `Total Credit to Private Non-Financial Sector` = `tot_credit$QUSPAM770A`,
+         `Capacity Utilization` = `cap_util$TCU`,
+         `Government Expenditures` = `fg_exp$FGEXPND`,
+         `Government Balance` = `gov_bal$M318501Q027NBEA`,
+         `Net Exports` = `net_exp$NETEXP`, `Median Weekly Income` = `med_income$LES1252881600Q`)
+
+gdp_ts = ts(df$`GDP (In Billions)`, start = c(2001, 1), frequency = 4)
+```
+
+# **An Investigation of Key Determinants of U.S. GDP Growth: A Keynesian Approach**
+
+## **Abstract**
+
+This paper examines the key determinants of U.S. Gross Domestic Product (GDP) growth using a combination of Keynesian economic theory and empirical modeling. By leveraging both traditional econometric techniques (i.e., stepwise regression) and advanced machine learning models (i.e., Random Forest), this study aims to provide an understanding of the factors influencing GDP growth. In particular, we focus on variables such as consumption, investment, government spending, and net exports—central to Keynesian economic theory—while validating the predictions using a robust machine learning approach. The results suggest that government expenditures and Total Credit to Private Non-Financial Sector play significant roles in driving GDP growth, with the Random Forest model providing more insightful predictive capabilities in comparison to the conventional stepwise regression model.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(DiagrammeR)
+
+# Create flowchart
+flowchart = grViz("
+digraph {
+  # Define graph attributes
+  graph [rankdir = TB]
+  
+  # Define nodes
+  node [shape = rectangle, style = filled, fillcolor = lightblue]
+  
+  GDP [label = 'Gross Domestic Product (GDP)']
+  Consumption [label = 'Consumption (C)']
+  Investment [label = 'Investment (I)']
+  Government [label = 'Government Spending (G)']
+  NetExports [label = 'Net Exports (X-M)']
+
+  # Define relationships (edges)
+  GDP -> Consumption [label = 'Consumer Sentiment, Income']
+  GDP -> Investment [label = 'Business Sentiment, Credit Availability']
+  GDP -> Government [label = 'Fiscal Policies, Public Services']
+  GDP -> NetExports [label = 'Trade Policies, Exchange Rates']
+
+  # Style nodes and edges
+  node [style = filled, fillcolor = steelblue]
+  Consumption -> GDP
+  Investment -> GDP
+  Government -> GDP
+  NetExports -> GDP
+  
+  # Additional formatting for layout
+  rankdir=LR
+}
+")
+flowchart
+```
+
+## **Introduction**
+
+Economic growth is a fundamental objective for policymakers, economists, and institutions around the world. To enhance the effectiveness of fiscal and monetary policies, it is critical to understand the underlying factors that drive economic growth. For over a century, the Keynesian economic framework has provided a solid foundation for understanding aggregate demand and its components, notably consumption, investment, government spending, and net exports. In this study, we investigate the relationship between GDP growth and these key determinants, utilizing a combination of theoretical insight and empirical modeling techniques.
+
+Given the complexities of economic systems, we use two complementary approaches to modeling the relationships between the variables:
+
+1.  **Linear Regression**: model that examines the linear relationships in line with traditional Keynesian economic theory.
+
+2.  **Random Forest**: a non-linear machine learning method, to validate and extend our findings by capturing intricate interactions and non-linear relationships.
+
+## **Theoretical Framework**
+
+### **Keynesian Economic Theory**
+
+Keynesian economic theory emphasizes the role of aggregate demand in determining the overall level of economic activity. GDP is the sum of consumption (C), investment (I), government spending (G), and net exports (X-M). Mathematically:
+
+Where:
+
+-   **Consumption (C)**: Driven by consumer sentiment and household income, consumption is often the largest component of GDP.
+
+-   **Investment (I)**: Reflects business sentiment and the amount of credit available to firms, with potential lag effects on the economy.
+
+-   **Government Spending (G)**: Comprising public expenditures aimed at stimulating demand through fiscal policies, such as infrastructure investments.
+
+-   **Net Exports (X-M)**: Representing the trade balance, this component reflects external demand for domestic goods and services.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+gdp_diagram = grViz("
+digraph {
+  # Define graph attributes
+  graph [rankdir = TB]
+  
+  # Define nodes with specific labeling
+  node [shape = rectangle, style = filled, fillcolor = lightblue]
+  
+  GDP [label = 'Gross Domestic Product (GDP)']
+  Consumption [label = 'Consumption (C)']
+  Investment [label = 'Investment (I)']
+  Government [label = 'Government Spending (G)']
+  NetExports [label = 'Net Exports (X - M)']
+
+  # Connect nodes to show components of GDP
+  GDP -> Consumption
+  GDP -> Investment
+  GDP -> Government
+  GDP -> NetExports
+
+  # Style nodes for clarity
+  node [style = filled, fillcolor = steelblue]
+  Consumption -> GDP
+  Investment -> GDP
+  Government -> GDP
+  NetExports -> GDP
+  
+  # Additional formatting for layout
+  rankdir=LR
+}
+")
+gdp_diagram
+```
+
+### **Keynesian Dynamics**
+
+In practice, these components interact within a dynamic system affected by external forces, such as changes in government policy, interest rates, or global economic conditions. The role of these exogenous factors has often been a subject of debate, especially when considering how external factors influence these domestic economic components.
+
+-   **Government Expenditures (G)** can directly inject demand into the economy through stimulus packages or public services.
+
+-   **Interest Rates** can influence **Investment (I)** by altering borrowing costs.
+
+-   **Sentiment Indices** (such as **Consumer Sentiment** and **Business Sentiment**) provide information on the willingness of households and firms to spend or invest, thereby influencing **C** and **I**.
+
+-   **Net Exports (X-M)** are impacted by exchange rates, trade policies, and global demand for domestic goods and services.
+
+While the basic Keynesian model treats these relationships as linear and static, modern data-driven methods allow for more flexibility in modeling potentially complex dynamics.
+
+## **Data Description**
+
+This study uses quarterly U.S. data from 2001 to 2023, gathered from Federal Reserve Bank of St. Louis. The data set consists of:
+
+-   **GDP (In Billions):** The target variable representing the U.S. Gross Domestic Product.
+
+-   **Consumer Sentiment:** A proxy for consumption, captured through surveys that measure consumer confidence.
+
+-   **Business Sentiment:** Reflected by business survey indicators, directly influencing private investment decisions.
+
+-   **Total Credit to Private Non-Financial Sector:** An indicator of financial conditions, representing the amount of credit available to businesses.
+
+-   **Capacity Utilization:** A measure of the economy's ability to produce, serving as a gauge of economic efficiency.
+
+-   **Government Expenditures:** A measure of total government spending at the federal level, including all government investments and expenditures.
+
+-   **Net Exports:** The difference between exports and imports, which reflects international trade dynamics.
+
+The time series data are structured on a quarterly basis, ensuring consistency for time series modeling. All data were cleaned, transformed to a uniform time frequency, and merged into a single data set.
+
+## **Methodology**
+
+### **Multiple Linear Regression**
+
+I first approached the modeling task by fitting a multiple linear regression model. This method assumes that the relationships between GDP and the exogenous variables are linear:​
+
+The model is developed with the following steps:
+
+-   **Stepwise Selection:** A stepwise approach is used to refine the model, iteratively adding or removing predictors based on their significance.
+
+-   **Diagnostic Tests:** To verify model assumptions, residual analysis is performed to check for autocorrelation and heteroscedasticity.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Reproducibility
+set.seed(88)
+
+# Full Model
+key_model = lm(
+  `GDP (In Billions)` ~ 
+    `Federal Funds Effective Rate` +
+    `Consumer Sentiment` +
+    `Median Weekly Income` +
+    `Business Sentiment` +
+    `Total Credit to Private Non-Financial Sector` +
+    `Capacity Utilization` + 
+    `Government Expenditures` + 
+    `Net Exports` +
+    `Government Balance`,
+  data = df
+)
+summary(key_model)
+
+# Stepwise Model
+step_mod = step(key_model, direction = "both")
+summary(step_mod)
+
+# Residuals
+residuals = residuals(step_mod)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+# Plot Residuals
+ggplot(data = data.frame(Index = 1:length(residuals), Residuals = residuals), aes(x = Index, y = Residuals)) +
+  geom_line(color = "steelblue") +
+  ggtitle("Residuals of the Multiple Linear Regression Model") +
+  xlab("Index") +
+  ylab("Residuals") +
+  theme_minimal()
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+Acf(residuals)
+Pacf(residuals)
+```
+
+### **Random Forest**
+
+While the linear model provides insights, it may miss non-linear interactions between the predictors and GDP growth. To capture such complexities, a Random Forest model is applied.
+
+Random Forest is a non-parametric ensemble machine learning method, which builds multiple decision trees based on random subsets of the predictors. Each tree contributes to the final prediction, which is aggregated by averaging the outputs of all trees. This approach is robust and able to model non-linear and interaction effects between variables. We train the Random Forest model on 70% of the data and test it on the remaining 30%, providing both predictive accuracy and variable importance estimates.
+
+Key steps in the RF modeling process include:
+
+-   **Train-Test Split:** 70% of the data is used for training, and 30% is held back for testing.
+
+-   **Hyperparameter Tuning:** The number of trees (ntree) and the number of variables considered at each split (mtry) are set based on experimentation to minimize overfitting and maximize predictive accuracy.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(randomForest)
+
+# Identify Predictors and Target Variable
+X = df[, c("Consumer Sentiment", "Business Sentiment", "Median Weekly Income", "Total Credit to Private Non-Financial Sector",
+            "Capacity Utilization", "Government Expenditures", "Net Exports")]
+y = df$`GDP (In Billions)`
+
+# Train-Test Split (70-30 split)
+set.seed(88)
+train_index = sample(1:nrow(df), 0.7 * nrow(df))
+train_X = X[train_index, ]
+train_y = y[train_index]
+test_X = X[-train_index, ]
+test_y = y[-train_index]
+
+rf_model = randomForest(x = train_X, y = train_y, 
+                        ntree = 800, 
+                        mtry = 20, 
+                        importance = TRUE)
+print(rf_model)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+library(rpart.plot)
+library(rpart)
+
+single_tree = getTree(rf_model, k = 1, labelVar = TRUE)  # Extract tree #1
+
+# Convert the tree to a 'data frame' for better visualization in the plot
+single_tree_df = as.data.frame(single_tree)
+
+# Prepare the single tree for visualization as a decision tree:
+tree_rpart = rpart(formula = train_y ~ ., data = train_X, control = rpart.control(minsplit = 6))
+
+# Now plot the tree using rpart.plot
+rpart.plot(tree_rpart)
+```
+
+Variable Importance:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+# Importance
+importance_values = importance(rf_model)
+importance_values = as.data.frame(importance_values)
+
+# Normalize Importance
+importance_values$Normalized_IncMSE = (importance_values$`%IncMSE` / max(importance_values$`%IncMSE`)) * 100
+
+importance_df = data.frame(Variable = rownames(importance_values), 
+                            Normalized_Importance = importance_values$Normalized_IncMSE)
+
+# Plot variable importance
+ggplot(importance_df, aes(x = reorder(Variable, Normalized_Importance), y = Normalized_Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +  # Flip coordinates to have the variable names on the y-axis
+  ggtitle("Normalized Variable Importance from Random Forest Model") +
+  xlab("Variables") +
+  ylab("Normalized Importance (%)") +
+  theme_minimal()
+```
+
+## **Results**
+
+### **Regression Model Results**
+
+The initial linear regression model provided an R-squared of **0.90**, indicating a strong relationship between GDP and the selected predictors. Following stepwise selection, variables such as **Capacity Utilization**, **Government Expenditures**, and **Median Weekly Income** remain significant drivers of GDP growth, whereas **Business Sentiment** showed no significant effect and was removed from the model.
+
+**Residual Analysis:** Residuals from the model were analyzed to ensure the adequacy of the fit. The ACF and PACF plots did not show significant autocorrelation, and the residuals displayed no obvious pattern, indicating that the model assumptions were reasonable.
+
+### **Random Forest Model Results**
+
+The **Random Forest model** resulted in an **R-squared of 0.9791** significantly outperforming the regression model in terms of predictive accuracy. This indicates that the Random Forest model explains 97.91% of the variation in GDP.
+
+-   **RMSE (Root Mean Squared Error):** 334.4, reflecting the typical deviation from the actual GDP values.
+
+-   **Variable Importance:** The Random Forest model confirmed that **Government Expenditures** and **Total Credit to Private Non-Financial Sector** were the most significant variables in predicting GDP, in line with the results of the regression model.
+
+**Variable Importance:** The Random Forest technique also quantified the importance of each predictor, providing further insight into how different factors contribute to economic growth.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+# Predictions
+predictions_rf = predict(rf_model, newdata = df)
+
+# Actual Values
+actual_values_rf = df$`GDP (In Billions)`
+
+# DF
+comparison_df_rf = data.frame(Actual = actual_values_rf, Predicted = predictions_rf)
+
+
+# Plotting the actual vs predicted GDP values
+ggplot(comparison_df_rf, aes(x = Actual, y = Predicted)) +
+  geom_point(color = "steelblue", alpha = 0.6) +  # Scatter plot points
+  geom_abline(slope = 1, intercept = 0, color = "salmon", linetype = "dashed") +  # Reference line (y = x)
+  labs(title = "Random Forest Prediction Performance (Actual vs. Predicted GDP)",
+       x = "Actual GDP",
+       y = "Predicted GDP") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+\newpage
+
+### **Model Comparison**
+
+Both models agree that **Capacity Utilization** and **Government Expenditures** are key drivers of GDP growth. However, the Random Forest model provides superior predictive performance, likely due to its ability to model complex, non-linear relationships and interactions that the linear regression model could not capture.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=5}
+library(Metrics)
+
+# Make predictions for both models
+step_pred = predict(key_model, df)
+predictions_rf = predict(rf_model, newdata = test_X)
+
+# Calculate RMSE for both models
+rmse = function(actual, predicted) {
+  sqrt(mean((actual - predicted)^2))
+}
+
+# RMSE for Linear Regression model
+step_rmse = rmse(df$`GDP (In Billions)`, step_pred)
+
+# RMSE for Random Forest model
+rf_rmse = rmse(test_y, predictions_rf)
+
+rmse_df = data.frame(
+  Model = c("Linear Regression", "Random Forest"),
+  RMSE = c(step_rmse, rf_rmse)
+)
+
+# Create a bar plot comparing the RMSE values of the two models
+ggplot(rmse_df, aes(x = Model, y = RMSE, fill = Model)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_text(aes(label = round(RMSE, 2)), vjust = -0.5) +
+  ggtitle("RMSE Comparison: Regression vs. Random Forest Models") +
+  xlab("Model") +
+  ylab("Root Mean Squared Error (RMSE)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## **Discussion**
+
+The results of this study support the Keynesian framework, showing that **government spending** is the strongest determinants of GDP growth. This is consistent with Keynesian principles, where government expenditure acts as an essential source of demand, and efficient use of productive capacity can drive output.
+
+Despite the linearity of the regression model, the **Random Forest** model provides an additional advantage by capturing complex, non-linear relationships, demonstrating the complementary value of machine learning techniques in macroeconomic forecasting.
+
+\newpage
+
+## **Conclusion**
+
+This study successfully identifies the key determinants of U.S. GDP growth, showing that **capacity utilization** and **government expenditures** play crucial roles in driving economic output. Both traditional and machine learning approaches support these findings, with Random Forest offering superior predictive capability. These results provide valuable insights for policymakers, indicating that focusing on improving government spending and efficient utilization of capacity can significantly impact GDP growth. Future research may benefit from exploring other factors, such as interest rates and inflation, and further enhancing the Random Forest model through hyperparameter optimization and model ensembles.
+
+## **Sources**
+
+-   **Gross Domestic Product (GDP)**\
+    Federal Reserve Bank of St. Louis. (2024). *Gross Domestic Product (GDP)* [Dataset]. FRED. Retrieved from <https://fred.stlouisfed.org/series/GDP>
+
+-   **Consumer Sentiment (UMCSENT)**\
+    Federal Reserve Bank of St. Louis. (2024). *Consumer Sentiment (UMCSENT)* [Dataset]. FRED. Retrieved from [https://fred.stlouisfed.org/series/](https://fred.stlouisfed.org/series/UNRATE){.uri}[*UMCSENT*](https://fred.stlouisfed.org/series/UMCSENT)
+
+-   **Federal Funds Effective Rate (FEDFUNDS)**\
+    Federal Reserve Bank of St. Louis. (2024). *Federal Funds Effective Rate (FEDFUNDS)* [Dataset]. FRED. Retrieved from [https://fred.stlouisfed.org/series/](https://fred.stlouisfed.org/series/JTSJOL){.uri}[*FEDFUNDS*](https://fred.stlouisfed.org/series/FEDFUNDS)
+
+-   **Business Sentiment (MACROBUS)**\
+    Federal Reserve Bank of St. Louis. (2024). *Business Sentiment (MACROBUS)* [Dataset]. FRED. Retrieved from [https://fred.stlouisfed.org/series/](https://fred.stlouisfed.org/series/CIVPART){.uri}[*MACROBUS*](https://fred.stlouisfed.org/series/MACROBUS)
+
+-   **Total Credit to Private Non-Financial Sector (QUSPAM770A)**\
+    Federal Reserve Bank of St. Louis. (2024). *Total Credit to Private Non-Financial Sector (QUSPAM770A)*[Dataset]. FRED. Retrieved from [https://fred.stlouisfed.org/series/](https://fred.stlouisfed.org/series/CPALTT01USM657N){.uri}[*QUSPAM770A*](https://fred.stlouisfed.org/series/QUSPAM770A)
+
+-   **Capacity Utilization (TCU)**\
+    Federal Reserve Bank of St. Louis. (2024). *Capacity Utilization (TCU)* [Dataset]. FRED. Retrieved from [https://fred.stlouisfed.org/series/](https://fred.stlouisfed.org/series/PPIACO){.uri}[TCU](https://fred.stlouisfed.org/series/TCU)
+
+-   **Government Expenditures (FGEXPND)**\
+    Federal Reserve Bank of St. Louis. (2024). *Government Expenditures (FGEXPND)* [Dataset]. FRED. Retrieved from [https://fred.stlouisfed.org/series/](https://fred.stlouisfed.org/series/CORESTICKM159SFRBATL){.uri}[*FGEXPND*](https://fred.stlouisfed.org/series/FGEXPND)
+
+-   **Government Balance (M318501Q027NBEA)**\
+    Federal Reserve Bank of St. Louis. (2024). *Government Balance (M318501Q027NBEA)* [Dataset]. FRED. Retrieved from [https://fred.stlouisfed.org/series/](https://fred.stlouisfed.org/series/DPCCRV1Q225SBEA){.uri}[*M318501Q027NBEA*](https://fred.stlouisfed.org/series/M318501Q027NBEA)
+
+-   **Net Exports (NETEXP)**\
+    Federal Reserve Bank of St. Louis. (2024). *Net Exports (NETEXP)* [Dataset]. FRED. Retrieved from [https://fred.stlouisfed.org/series/](https://fred.stlouisfed.org/series/RSXFS){.uri}[NETEXP](https://fred.stlouisfed.org/series/NETEXP)
