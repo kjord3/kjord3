@@ -1,5 +1,7 @@
 # 👋 Hi, I'm Kaleb Jordan  
-<img width="1920" height="1279" alt="image" src="https://github.com/user-attachments/assets/58acb9aa-c049-45b1-98f4-b872627cc8ac" />
+<p align="center">
+  <img width="640" height="426" alt="image" src="https://github.com/user-attachments/assets/58acb9aa-c049-45b1-98f4-b872627cc8ac" />
+</p>
 
 ---
 🎓 **B.S. in Statistics | University of Illinois Urbana–Champaign** 
