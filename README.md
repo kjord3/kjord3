@@ -1,0 +1,58 @@
+# 👋 Hi, I'm Kaleb Jordan  
+
+🎓 **B.S. in Statistics | University of Illinois Urbana–Champaign** 
+💻 **Machine Learning + AI Intern @ Illinois ATLAS | 
+Business Process Improvement Intern @ Illinois ATLAS**
+
+---
+
+## 🧠 About Me
+I’m a data analyst passionate about turning raw data into meaningful insights that drive better decisions.  
+I enjoy exploring data through visualization, statistical modeling, and storytelling and I’m always looking for ways to make analysis more accessible and impactful.
+
+Currently, I’m focused on:
+- Building interactive dashboards and analytical reports  
+- Exploring real-world data using **R**, **Python**, **SQL**, and **Tableau**  
+- Applying **machine learning** and **predictive modeling** to solve business problems  
+- Communicating findings to both technical and non-technical audiences  
+
+---
+
+## 🛠️ Technical Skills
+**Languages & Tools:**  
+`Python` · `R` · `SQL` · `Tableau` · `Microsoft Office` · `AWS Services` · `Git/GitHub`  
+
+**Core Skills:**  
+- Data Cleaning & Wrangling  
+- Exploratory Data Analysis (EDA)  
+- Statistical Inference & Regression  
+- Data Visualization & Dashboard Design  
+- Machine Learning 
+- Business Process Optimization  
+- Data Storytelling  
+
+---
+
+## 📂 Featured Projects
+### 🧮 [Bracketology Model](https://github.com/kjord3/kjord3/tree/main/Bracketology)
+Modeling which college basketball teams will make the NCAA tournament and predict each teams seed using historical data.  
+
+### ⚾ [InningFlux](https://github.com/yourusername/inningflux)
+An interactive shiny app visualizing baseball game momentum via a custom “flux score” metric derived from Statcast data.  
+
+### ⭐ [Understanding Stuff+](https://github.com/kjord3/kjord3/blob/main/Stuff%2B.pdf)
+Showcasing analytical thinking by evaluating how teams and analysts use Stuff+ to evaluate MLB pitcher performance.
+
+---
+
+## 🎓 Certifications
+- **Google Data Analytics Professional Certificate**  
+- **Data Science Certificate**, University of Illinois  
+- **Machine Learning + AI Internship Experience**, Illinois ATLAS  
+
+---
+
+## 📫 Connect With Me
+- 💼 [LinkedIn]((https://www.linkedin.com/in/kaleb-jordan-b4288625a/))
+  
+---
