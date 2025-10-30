@@ -1,5 +1,7 @@
 # 👋 Hi, I'm Kaleb Jordan  
+<img width="1920" height="1279" alt="image" src="https://github.com/user-attachments/assets/58acb9aa-c049-45b1-98f4-b872627cc8ac" />
 
+---
 🎓 **B.S. in Statistics | University of Illinois Urbana–Champaign** 
 💻 **Machine Learning + AI Intern @ Illinois ATLAS | 
 Business Process Improvement Intern @ Illinois ATLAS**
