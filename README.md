@@ -59,6 +59,6 @@ Showcasing analytical thinking by evaluating how teams and analysts use Stuff+ t
 ---
 
 ## 📫 Connect With Me
-- 💼 [LinkedIn]((https://www.linkedin.com/in/kaleb-jordan-b4288625a/))
+- 💼 [LinkedIn](https://www.linkedin.com/in/kaleb-jordan-b4288625a/)
   
 ---
