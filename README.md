@@ -4,9 +4,11 @@
 </p>
 
 ---
-🎓 **B.S. in Statistics | University of Illinois Urbana–Champaign** 
-💻 **Machine Learning + AI Intern @ Illinois ATLAS | 
-Business Process Improvement Intern @ Illinois ATLAS**
+🎓 **B.S. in Statistics (2021-2025) | University of Illinois Urbana–Champaign**
+
+💻 **Machine Learning + AI Intern @ Illinois ATLAS** 
+
+💻 **Business Process Improvement Intern @ Illinois ATLAS**
 
 ---
 
