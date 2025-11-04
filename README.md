@@ -40,10 +40,10 @@ Currently, I’m focused on:
 ---
 
 ## 📂 Featured Projects
-### 🧮 [Bracketology Model](https://github.com/kjord3/kjord3/tree/main/Bracketology)
+### 🧮 [Bracketology Model](https://github.com/kjord3/kjord3/tree/main/bracket_challenge)
 Modeling which college basketball teams will make the NCAA tournament and predict each teams seed using historical data.  
 
-### ⚾ [InningFlux](https://github.com/yourusername/inningflux)
+### ⚾ [InningFlux](https://github.com/kjord3/kjord3/tree/main/InningFlux)
 An interactive shiny app visualizing baseball game momentum via a custom “flux score” metric derived from Statcast data.  
 
 ### ⭐ [Understanding Stuff+](https://github.com/kjord3/kjord3/blob/main/Stuff%2B.pdf)
