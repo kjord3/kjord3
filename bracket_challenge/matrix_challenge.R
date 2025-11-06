@@ -147,7 +147,11 @@ gbm_model <- train(
     n.minobsinnode = c(5, 10)
   )
 )
+summary(gbm_model)
 
+gbm_model$results %>% 
+  arrange(desc(ROC)) %>% 
+  head(1)
 ############################################################################################
 # Predict probabilities on test data
 test_df_eval <- test_df_eval %>%
@@ -163,8 +167,8 @@ top_predicted <- test_df_eval %>%
 
 first4 = test_df_eval %>%
   arrange(desc(pred_prob)) %>%
-  head(50) %>%
-  tail(13) %>%
+  head(41) %>%
+  tail(4) %>%
   select(Team, pred_prob)
 first4
 
@@ -205,6 +209,7 @@ predicted_teams25 <- bids25 %>% filter(Team %in% predicted_teams$Team)
 bids25 = rbind(conf_champs, predicted_teams25)
 
 # Texas and Xavier miss out (Made it in reality)
+# West Virginia and UC Irvine made it (Missed in reality)
 ##################################################################################
 train = df %>% filter(Year < 2025)
 
