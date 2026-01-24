@@ -1,0 +1,36 @@
+library(toRvik)
+
+copy_2021 = read.table(
+  "clipboard",
+  sep = "\t",
+  header = TRUE,
+  stringsAsFactors = FALSE,
+  fill = TRUE,
+  quote = ""
+)
+
+teams_2021 = copy_2021
+
+teams_2021 = teams_2021 %>% filter(Team != "Team")
+
+teams_2021$Team <- gsub("\\d+", "", teams_2021$Team)    # remove digits
+teams_2021$Team <- trimws(teams_2021$Team)   
+
+teams_2021 = teams_2021 %>% rename(`Avg Resume` = Avg, `Avg Quality` = Avg.1)
+teams_2021$Year = 2021
+teams_2021$Seed = NA
+
+teams_2021 = teams_2021 %>% select(Rk, Year, Team, Seed, NET, KPI, SOR, `Avg Quality`, BPI, KP, `Avg Resume`,
+                                   Q1A, Q1, Q1.2, Q3, Q4)
+
+teams_2021 <- teams_2021 %>%
+  separate(Q1A, into = c("Q1A_w", "Q1A_l"), sep = "-", convert = TRUE) %>%
+  separate(Q1,  into = c("Q1_w",  "Q1_l"),  sep = "-", convert = TRUE) %>%
+  separate(Q1.2,into = c("Q12_w", "Q12_l"), sep = "-", convert = TRUE) %>%
+  separate(Q3,  into = c("Q3_w",  "Q3_l"),  sep = "-", convert = TRUE) %>%
+  separate(Q4,  into = c("Q4_w",  "Q4_l"),  sep = "-", convert = TRUE)
+
+
+
+
+write.csv(teams_2021, "torvik21.csv", row.names = TRUE)
