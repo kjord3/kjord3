@@ -5,6 +5,7 @@
 
 ---
 🎓 **B.S. in Statistics (2021-2025) | University of Illinois Urbana–Champaign**
+🎓 **M.S. in Data Analytics Engineering (2026-2027) | Northeastern University**
 
 💻 **Machine Learning + AI Intern @ Illinois ATLAS** 
 
