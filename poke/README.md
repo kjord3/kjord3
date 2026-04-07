@@ -1,1 +1,0 @@
-This project investigates whether a Pokémon’s battle statistics and type profile can explain what makes it Legendary. Using exploratory data analysis, feature engineering, and machine learning classification models, I evaluate which characteristics are most strongly associated with Legendary status.
