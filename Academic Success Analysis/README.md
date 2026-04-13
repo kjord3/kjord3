@@ -1,0 +1,1 @@
+This project analyzes key behavioral, social, and academic factors that influence student performance. Using the Student Performance dataset, the goal is to identify the most important predictors of academic success and build statistical models to estimate final grades.
