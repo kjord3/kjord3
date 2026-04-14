@@ -24,6 +24,8 @@ Currently, I’m focused on:
 - Applying **machine learning** and **predictive modeling** to solve business problems  
 - Communicating findings to both technical and non-technical audiences  
 
+Resume: https://github.com/kjord3/kjord3/tree/main/Kaleb_Jordan_Resume_2026.pdf
+
 ---
 
 ## 🛠️ Technical Skills
